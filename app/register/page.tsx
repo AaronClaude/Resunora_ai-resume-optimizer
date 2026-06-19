@@ -217,24 +217,4 @@ export default function RegisterPage() {
       </div>
     </div>
   );
-
-          <p className="mt-6 text-center text-sm text-zinc-500">
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-violet-400 transition hover:text-violet-300">
-              Sign in
-            </Link>
-          </p>
-
-          <div className="mt-8 text-center">
-            <Link
-              href="/"
-              className="text-sm text-zinc-500 transition hover:text-zinc-300"
-            >
-              ← Back to home
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 }
