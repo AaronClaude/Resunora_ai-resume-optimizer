@@ -1,27 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { ResumeUpload } from "@/components/resume-upload";
+import { MatchResults } from "@/components/match-results";
+import { AnalysisProgress } from "@/components/analysis-progress";
+import type { AnalysisResult } from "@/types/analysis";
+
+const PROGRESS_STAGES = [
+  { at: 15, label: "Reading resume content..." },
+  { at: 35, label: "Parsing job requirements..." },
+  { at: 55, label: "Matching keywords & skills..." },
+  { at: 75, label: "Identifying gaps..." },
+  { at: 90, label: "Generating report..." },
+];
 
 export default function DashboardPage() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [hasOptimized, setHasOptimized] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState("");
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [progressStage, setProgressStage] = useState("");
+  const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const canOptimize = resumeFile && jobDescription.trim().length > 0;
 
-  // Helper function to safely convert images/PDFs into a Base64 data string
+  useEffect(() => {
+    if (!isOptimizing) {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+        progressInterval.current = null;
+      }
+      return;
+    }
+
+    setProgress(0);
+    setProgressStage(PROGRESS_STAGES[0].label);
+
+    progressInterval.current = setInterval(() => {
+      setProgress((prev) => {
+        const next = Math.min(prev + 1.5, 92);
+        const stage = [...PROGRESS_STAGES].reverse().find((s) => next >= s.at);
+        if (stage) setProgressStage(stage.label);
+        return next;
+      });
+    }, 120);
+
+    return () => {
+      if (progressInterval.current) clearInterval(progressInterval.current);
+    };
+  }, [isOptimizing]);
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const base64String = reader.result as string;
-        // Strip away the metadata prefix (e.g., "data:image/jpeg;base64,")
         resolve(base64String.split(",")[1]);
       };
       reader.onerror = (error) => reject(error);
@@ -30,33 +68,30 @@ export default function DashboardPage() {
 
   async function handleOptimize() {
     if (!canOptimize) return;
-    
+
     setIsOptimizing(true);
     setHasOptimized(false);
     setErrorMsg("");
-    setAnalysisResult("");
+    setAnalysisResult(null);
 
     try {
       let fileData = "";
-      // Determine if the file is an image or a PDF blueprint
-      const isBinaryFile = resumeFile.type.startsWith("image/") || resumeFile.type === "application/pdf";
+      const isBinaryFile =
+        resumeFile.type.startsWith("image/") || resumeFile.type === "application/pdf";
 
       if (isBinaryFile) {
         fileData = await fileToBase64(resumeFile);
       } else {
-        fileData = await resumeFile.text(); // Fallback for plain text files (.txt)
+        fileData = await resumeFile.text();
       }
 
-      // Send data to our API route along with file metadata types
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          fileData: fileData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileData,
           fileType: resumeFile.type,
-          jobDescription: jobDescription 
+          jobDescription,
         }),
       });
 
@@ -66,11 +101,13 @@ export default function DashboardPage() {
         throw new Error(data.error || "Something went wrong while processing.");
       }
 
+      setProgress(100);
+      setProgressStage("Analysis complete!");
       setAnalysisResult(data.analysis);
       setHasOptimized(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setErrorMsg(err.message || "Failed to analyze resume.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to analyze resume.");
     } finally {
       setIsOptimizing(false);
     }
@@ -96,7 +133,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-5">
-          {/* Input panel */}
           <div className="space-y-6 lg:col-span-3">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur">
               <ResumeUpload file={resumeFile} onFileChange={setResumeFile} />
@@ -135,12 +171,13 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Results panel */}
           <div className="lg:col-span-2">
             <div className="sticky top-8 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur">
               <h2 className="text-sm font-medium text-zinc-300">Match results</h2>
 
-              {!hasOptimized ? (
+              {isOptimizing ? (
+                <AnalysisProgress progress={progress} stage={progressStage} />
+              ) : !hasOptimized || !analysisResult ? (
                 <div className="mt-8 flex flex-col items-center py-8 text-center">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-800/80 text-zinc-500">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -152,20 +189,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="mt-6 space-y-5">
-                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 max-h-[500px] overflow-y-auto">
-                    <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 block mb-3">
-                      Gemini Optimization Report
-                    </span>
-                    <div className="text-sm text-zinc-200 whitespace-pre-wrap default-scroll leading-relaxed">
-                      {analysisResult}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-zinc-500 text-center pt-2">
-                    Analysis complete. Ready to apply adjustments.
-                  </p>
-                </div>
+                <MatchResults result={analysisResult} />
               )}
             </div>
           </div>
