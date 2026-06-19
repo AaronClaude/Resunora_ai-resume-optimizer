@@ -9,17 +9,71 @@ export default function DashboardPage() {
   const [jobDescription, setJobDescription] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [hasOptimized, setHasOptimized] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const canOptimize = resumeFile && jobDescription.trim().length > 0;
 
-  function handleOptimize() {
+  // Helper function to safely convert images/PDFs into a Base64 data string
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        // Strip away the metadata prefix (e.g., "data:image/jpeg;base64,")
+        resolve(base64String.split(",")[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  async function handleOptimize() {
     if (!canOptimize) return;
+    
     setIsOptimizing(true);
     setHasOptimized(false);
-    setTimeout(() => {
-      setIsOptimizing(false);
+    setErrorMsg("");
+    setAnalysisResult("");
+
+    try {
+      let fileData = "";
+      // Determine if the file is an image or a PDF blueprint
+      const isBinaryFile = resumeFile.type.startsWith("image/") || resumeFile.type === "application/pdf";
+
+      if (isBinaryFile) {
+        fileData = await fileToBase64(resumeFile);
+      } else {
+        fileData = await resumeFile.text(); // Fallback for plain text files (.txt)
+      }
+
+      // Send data to our API route along with file metadata types
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          fileData: fileData,
+          fileType: resumeFile.type,
+          jobDescription: jobDescription 
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong while processing.");
+      }
+
+      setAnalysisResult(data.analysis);
       setHasOptimized(true);
-    }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || "Failed to analyze resume.");
+    } finally {
+      setIsOptimizing(false);
+    }
   }
 
   return (
@@ -65,13 +119,19 @@ export default function DashboardPage() {
               />
             </div>
 
+            {errorMsg && (
+              <p className="text-sm font-semibold text-red-400 px-2">
+                ❌ {errorMsg}
+              </p>
+            )}
+
             <button
               type="button"
               onClick={handleOptimize}
               disabled={!canOptimize || isOptimizing}
               className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isOptimizing ? "Analyzing…" : "Optimize resume"}
+              {isOptimizing ? "Analyzing with Gemini..." : "Optimize resume"}
             </button>
           </div>
 
@@ -93,42 +153,17 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="mt-6 space-y-5">
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                        Match score
-                      </span>
-                      <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-sm font-semibold text-emerald-400">
-                        82%
-                      </span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
-                      <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-violet-500 to-emerald-400" />
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4 max-h-[500px] overflow-y-auto">
+                    <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 block mb-3">
+                      Gemini Optimization Report
+                    </span>
+                    <div className="text-sm text-zinc-200 whitespace-pre-wrap default-scroll leading-relaxed">
+                      {analysisResult}
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
-                      <p className="text-xs text-zinc-500">Top missing keyword</p>
-                      <p className="mt-1">
-                        <span className="rounded bg-violet-500/20 px-2 py-0.5 text-sm text-violet-300">
-                          cross-functional collaboration
-                        </span>
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
-                      <p className="text-xs text-zinc-500">ATS status</p>
-                      <p className="mt-1 flex items-center gap-2 text-sm text-emerald-400">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Format compatible
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-zinc-500">
-                    Full optimization with AI suggestions coming soon.
+                  <p className="text-xs text-zinc-500 text-center pt-2">
+                    Analysis complete. Ready to apply adjustments.
                   </p>
                 </div>
               )}

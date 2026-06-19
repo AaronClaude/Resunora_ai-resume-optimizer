@@ -1,0 +1,21 @@
+# Pushing changes to the Main branch
+git add .
+git commit -m "Your message describing the changes"
+git push
+
+
+# Create branch for new feature
+git checkout -b add-login-page
+
+# Work on it, make changes, commit
+git add .
+git commit -m "Add login page"
+git push origin add-login-page
+
+# It works! Merge to main
+git checkout main
+git merge add-login-page
+git push
+
+# Cleanup
+git branch -d add-login-page
