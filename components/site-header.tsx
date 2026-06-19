@@ -1,11 +1,17 @@
 import Link from "next/link";
-import { Logo } from "./logo";
 
 export function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Logo />
+        <Link href="/" className="group flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition group-hover:shadow-violet-500/40">
+            R
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-zinc-100">
+            Resu<span className="text-violet-400">nora</span>
+          </span>
+        </Link>
         <nav className="hidden items-center gap-8 text-sm text-zinc-400 md:flex">
           <a href="#features" className="transition hover:text-zinc-100">
             Features

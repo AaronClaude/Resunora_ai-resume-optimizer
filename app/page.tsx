@@ -57,7 +57,7 @@ export default function HomePage() {
             <div>
               <div className="animate-fade-up mb-6 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-                AI-powered resume tailoring
+                Smart resume tailoring with Resunora
               </div>
               <h1 className="animate-fade-up-delay-1 text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
                 Land more interviews with an{" "}
@@ -67,8 +67,9 @@ export default function HomePage() {
                 resume
               </h1>
               <p className="animate-fade-up-delay-2 mt-6 max-w-lg text-lg leading-relaxed text-zinc-400">
-                Stop sending the same resume everywhere. Match every job description
-                with tailored keywords, stronger bullet points, and ATS-friendly formatting.
+                Every application deserves a tailored resume. Resunora aligns your
+                experience with each job posting — sharper keywords, stronger bullets,
+                and formatting that clears ATS filters.
               </p>
               <div className="animate-fade-up-delay-2 mt-10 flex flex-wrap gap-4">
                 <Link
@@ -155,7 +156,7 @@ export default function HomePage() {
                 Everything you need to stand out
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-                Built for job seekers who want results — not another generic template.
+                Built for job seekers who want real results — not another one-size-fits-all template.
               </p>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
@@ -185,7 +186,7 @@ export default function HomePage() {
                 Three steps to a better resume
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-zinc-400">
-                No complicated setup. Upload, paste, and optimize in under a minute.
+                No complicated setup. Upload your resume, paste the job description, and let Resunora do the rest.
               </p>
             </div>
             <div className="grid gap-8 md:grid-cols-3">
@@ -209,7 +210,7 @@ export default function HomePage() {
               Ready to get more interviews?
             </h2>
             <p className="mt-4 text-zinc-400">
-              Join thousands of job seekers who tailor every application with ResumeAI.
+              Join thousands of job seekers who tailor every application with Resunora.
             </p>
             <Link
               href="/login"
@@ -223,7 +224,7 @@ export default function HomePage() {
 
       <footer className="border-t border-zinc-800/60 py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 text-sm text-zinc-500 md:flex-row">
-          <p>© {new Date().getFullYear()} ResumeAI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Resunora. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#features" className="transition hover:text-zinc-300">
               Features
